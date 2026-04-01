@@ -1,0 +1,37 @@
+{
+  "expo": {
+    "name": "Astra",
+    "slug": "astra",
+    "version": "1.0.0",
+    "icon": "./assets/images/icon.png",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "scheme": "astra",
+    "ios": {
+      "supportsTablet": false
+    },
+    "android": {
+      "package": "com.sajaltyagi.astra",
+      "icon": "./assets/images/icon.png",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon-foreground.png",
+        "backgroundColor": "#01172B"
+      },
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false
+    },
+    "plugins": [
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#01172B",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 220
+        }
+      ],
+      "expo-web-browser"
+    ]
+  }
+}
