@@ -16,7 +16,7 @@ export const categoriesSummary = {
 
 export const categoryBudgetItems: CategoryBudgetItem[] = [
   {
-    accent: '#DA2017',
+    accent: '#FF5F57',
     budget: 7500,
     icon: 'key',
     name: 'Rent',
@@ -24,7 +24,7 @@ export const categoryBudgetItems: CategoryBudgetItem[] = [
     tone: 'green'
   },
   {
-    accent: '#4CD112',
+    accent: '#52D273',
     budget: 4500,
     icon: 'restaurant',
     isGroup: true,
@@ -33,7 +33,7 @@ export const categoryBudgetItems: CategoryBudgetItem[] = [
     tone: 'green'
   },
   {
-    accent: '#68D61D',
+    accent: '#8BEA57',
     budget: 2000,
     icon: 'nutrition',
     level: 1,
@@ -42,7 +42,7 @@ export const categoryBudgetItems: CategoryBudgetItem[] = [
     tone: 'green'
   },
   {
-    accent: '#68D61D',
+    accent: '#F3C94C',
     budget: 1500,
     icon: 'fast-food',
     level: 1,
@@ -51,7 +51,7 @@ export const categoryBudgetItems: CategoryBudgetItem[] = [
     tone: 'yellow'
   },
   {
-    accent: '#68D61D',
+    accent: '#5BC58B',
     budget: 1000,
     icon: 'cafe',
     level: 1,
@@ -60,7 +60,7 @@ export const categoryBudgetItems: CategoryBudgetItem[] = [
     tone: 'green'
   },
   {
-    accent: '#20C5C1',
+    accent: '#2CC9D6',
     budget: 1500,
     icon: 'car-sport',
     name: 'Car & Transport',
@@ -68,7 +68,7 @@ export const categoryBudgetItems: CategoryBudgetItem[] = [
     tone: 'red'
   },
   {
-    accent: '#5A58D8',
+    accent: '#7C6BFF',
     budget: 2000,
     icon: 'bag-handle',
     isGroup: true,
@@ -77,7 +77,7 @@ export const categoryBudgetItems: CategoryBudgetItem[] = [
     tone: 'green'
   },
   {
-    accent: '#735DFF',
+    accent: '#5FA3FF',
     budget: 1000,
     icon: 'shirt',
     level: 1,
@@ -86,7 +86,7 @@ export const categoryBudgetItems: CategoryBudgetItem[] = [
     tone: 'green'
   },
   {
-    accent: '#735DFF',
+    accent: '#A36BFF',
     budget: 1000,
     icon: 'basket',
     level: 1,
@@ -95,7 +95,7 @@ export const categoryBudgetItems: CategoryBudgetItem[] = [
     tone: 'green'
   },
   {
-    accent: '#E11D1D',
+    accent: '#FF6B9D',
     budget: 500,
     icon: 'boat',
     name: 'Travel & Vacation',
@@ -103,7 +103,7 @@ export const categoryBudgetItems: CategoryBudgetItem[] = [
     tone: 'green'
   },
   {
-    accent: '#E11D1D',
+    accent: '#FF8A3D',
     budget: 200,
     icon: 'film',
     name: 'Entertainment',
@@ -111,7 +111,7 @@ export const categoryBudgetItems: CategoryBudgetItem[] = [
     tone: 'green'
   },
   {
-    accent: '#E11D1D',
+    accent: '#36B4FF',
     budget: 200,
     icon: 'construct',
     name: 'Utilities',
@@ -119,7 +119,7 @@ export const categoryBudgetItems: CategoryBudgetItem[] = [
     tone: 'green'
   },
   {
-    accent: '#E11D1D',
+    accent: '#3E71FF',
     budget: 200,
     icon: 'tv',
     name: 'Streaming',
@@ -127,7 +127,7 @@ export const categoryBudgetItems: CategoryBudgetItem[] = [
     tone: 'green'
   },
   {
-    accent: '#E11D1D',
+    accent: '#FF5F5F',
     budget: 200,
     icon: 'medkit',
     name: 'Healthcare',
@@ -135,7 +135,7 @@ export const categoryBudgetItems: CategoryBudgetItem[] = [
     tone: 'orange'
   },
   {
-    accent: '#E11D1D',
+    accent: '#F07B52',
     budget: 150,
     icon: 'barbell',
     name: 'Gym',
@@ -143,7 +143,7 @@ export const categoryBudgetItems: CategoryBudgetItem[] = [
     tone: 'green'
   },
   {
-    accent: '#E11D1D',
+    accent: '#9AA9BD',
     budget: 200,
     icon: 'person',
     name: 'Other',

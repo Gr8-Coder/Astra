@@ -20,6 +20,7 @@ export type CreditCardAccount = {
 export type DepositoryAccount = {
   changeLabel: string;
   current: number;
+  id?: string;
   label: string;
   name: string;
   visualColor: string;

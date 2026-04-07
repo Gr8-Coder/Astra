@@ -15,7 +15,11 @@ This folder contains the first Astra backend schema for the MVP.
    - Go to `Project Settings -> API Keys`.
    - Create a new secret key.
    - Delete the exposed one after you have replaced it anywhere else.
-2. Open `SQL Editor` and run the migration in `supabase/migrations/20260330190000_initial_schema.sql`.
+2. Open `SQL Editor` and run these migrations in order:
+   - `supabase/migrations/20260330190000_initial_schema.sql`
+   - `supabase/migrations/20260403194000_bank_link_sessions.sql`
+   - `supabase/migrations/20260404102000_source_events_and_sync_metrics.sql`
+   - `supabase/migrations/20260404214500_connector_bridge_p1.sql`
 3. In `Authentication -> URL Configuration`, add the redirect allow list entries for Expo and the installed app:
    - `astra://**`
    - `exp://127.0.0.1:8081/--/**`
@@ -43,5 +47,11 @@ This folder contains the first Astra backend schema for the MVP.
    - `npx supabase link --project-ref dbcsfoezxznyprkrduld`
 4. Push migrations:
    - `npx supabase db push`
-5. Generate database types for the app:
+5. Deploy the bank-link function:
+   - `npx supabase functions deploy bank-link --project-ref dbcsfoezxznyprkrduld`
+6. Set function secrets (minimum for MVP OTP flow):
+   - `npx supabase secrets set BANK_LINK_PROVIDER=mock BANK_LINK_MOCK_OTP=123456 --project-ref dbcsfoezxznyprkrduld`
+7. For real providers, set these too:
+   - `npx supabase secrets set BANK_LINK_API_BASE_URL=... BANK_LINK_CLIENT_ID=... BANK_LINK_CLIENT_SECRET=... BANK_LINK_SYNC_ENDPOINT=... BANK_LINK_TRANSACTIONS_ENDPOINT=... --project-ref dbcsfoezxznyprkrduld`
+8. Generate database types for the app:
    - `npx supabase gen types typescript --project-id dbcsfoezxznyprkrduld --schema public`

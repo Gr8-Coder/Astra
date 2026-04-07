@@ -12,6 +12,7 @@ import {
   topMovers,
   type RangeKey
 } from '../data/investments';
+import { hapticSelection, hapticSoft } from '../lib/haptics';
 import { clamp, colors, fonts, formatCurrency, radii, shadows } from '../theme';
 
 function chunkItems<T>(items: T[], size: number) {
@@ -101,7 +102,10 @@ export function InvestmentsScreen() {
               return (
                 <Pressable
                   key={range}
-                  onPress={() => setActiveRange(range)}
+                  onPress={() => {
+                    hapticSelection();
+                    setActiveRange(range);
+                  }}
                   style={[styles.rangeChip, isActive ? styles.rangeChipActive : null]}
                 >
                   <Text allowFontScaling={false} style={[styles.rangeLabel, isActive ? styles.rangeLabelActive : null]}>
@@ -119,9 +123,9 @@ export function InvestmentsScreen() {
         bounces={false}
         contentContainerStyle={styles.moversScroller}
         decelerationRate="fast"
+        directionalLockEnabled
         disableIntervalMomentum
         horizontal
-        nestedScrollEnabled
         showsHorizontalScrollIndicator={false}
         snapToAlignment="start"
         snapToInterval={moversPageInterval}
@@ -193,7 +197,10 @@ export function InvestmentsScreen() {
       })}
 
       <SectionLabel title="Allocation" />
-      <Pressable style={styles.allocationCard}>
+      <Pressable
+        onPress={hapticSoft}
+        style={({ pressed }) => [styles.allocationCard, pressed ? styles.allocationCardPressed : null]}
+      >
         <Ionicons color={colors.textPrimary} name="add" size={22} />
       </Pressable>
     </ScrollView>
@@ -381,5 +388,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     justifyContent: 'center',
     minHeight: 54
+  },
+  allocationCardPressed: {
+    opacity: 0.86,
+    transform: [{ scale: 0.99 }]
   }
 });

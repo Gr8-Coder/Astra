@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Pressable,
@@ -22,6 +22,8 @@ import {
   upcomingPayments,
   reviewItems
 } from '../data/dashboard';
+import { loadDashboardSnapshot } from '../lib/derived';
+import { hapticSoft } from '../lib/haptics';
 import { clamp, colors, fonts, formatCurrency, radii, shadows } from '../theme';
 
 function chunkItems<T>(items: T[], size: number) {
@@ -34,7 +36,12 @@ function chunkItems<T>(items: T[], size: number) {
   return pages;
 }
 
-export function DashboardScreen() {
+type DashboardScreenProps = {
+  refreshToken: number;
+  userId: string;
+};
+
+export function DashboardScreen({ refreshToken, userId }: DashboardScreenProps) {
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const isCompact = width < 380;
@@ -42,13 +49,19 @@ export function DashboardScreen() {
   const horizontalPadding = clamp(width * 0.052, 16, 24);
   const contentWidth = width - horizontalPadding * 2;
   const categoryPageWidth = contentWidth - 24;
-  const categoryPages = chunkItems(categoryBudgets, isPhoneWidth ? 3 : 4);
+  const [liveBudgetSummary, setLiveBudgetSummary] = useState(budgetSummary);
+  const [liveCategoryBudgets, setLiveCategoryBudgets] = useState(categoryBudgets);
+  const categoryPages = chunkItems(liveCategoryBudgets, isPhoneWidth ? 3 : 4);
   const sectionOne = useRef(new Animated.Value(0)).current;
   const sectionTwo = useRef(new Animated.Value(0)).current;
   const sectionThree = useRef(new Animated.Value(0)).current;
   const sectionFour = useRef(new Animated.Value(0)).current;
   const sectionFive = useRef(new Animated.Value(0)).current;
   const categoryPageInterval = categoryPageWidth + 10;
+
+  function handleMarkReviewed() {
+    hapticSoft();
+  }
 
   useEffect(() => {
     const animations = [sectionOne, sectionTwo, sectionThree, sectionFour, sectionFive].map((value) =>
@@ -63,6 +76,36 @@ export function DashboardScreen() {
 
     Animated.stagger(110, animations).start();
   }, [sectionFive, sectionFour, sectionOne, sectionThree, sectionTwo]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function syncDashboard() {
+      try {
+        const snapshot = await loadDashboardSnapshot(userId);
+
+        if (!active) {
+          return;
+        }
+
+        setLiveBudgetSummary(snapshot.budgetSummary);
+        setLiveCategoryBudgets(snapshot.categoryBudgets);
+      } catch (error) {
+        console.warn('[dashboard] failed to load derived snapshot', error);
+
+        if (active) {
+          setLiveBudgetSummary(budgetSummary);
+          setLiveCategoryBudgets(categoryBudgets);
+        }
+      }
+    }
+
+    void syncDashboard();
+
+    return () => {
+      active = false;
+    };
+  }, [refreshToken, userId]);
 
   const createRevealStyle = (value: Animated.Value) => ({
     opacity: value,
@@ -91,10 +134,10 @@ export function DashboardScreen() {
         <View style={styles.cardShell}>
           <View style={styles.heroCard}>
             <Text allowFontScaling={false} style={styles.heroAmount}>
-              {formatCurrency(budgetSummary.left)} left
+              {formatCurrency(liveBudgetSummary.left)} left
             </Text>
             <Text allowFontScaling={false} style={styles.heroSubcopy}>
-              out of {formatCurrency(budgetSummary.totalBudget)} budgeted
+              out of {formatCurrency(liveBudgetSummary.totalBudget)} budgeted
             </Text>
             <View style={styles.chartWrap}>
               <BudgetTrendChart height={isCompact ? 148 : 162} />
@@ -147,7 +190,10 @@ export function DashboardScreen() {
               </View>
             ))}
 
-            <Pressable style={styles.reviewButton}>
+            <Pressable
+              onPress={handleMarkReviewed}
+              style={({ pressed }) => [styles.reviewButton, pressed ? styles.reviewButtonPressed : null]}
+            >
               <Text allowFontScaling={false} style={styles.reviewButtonText}>
                 Mark as reviewed
               </Text>
@@ -164,9 +210,9 @@ export function DashboardScreen() {
               bounces={false}
               contentContainerStyle={styles.categoryScroller}
               decelerationRate="fast"
+              directionalLockEnabled
               disableIntervalMomentum
               horizontal
-              nestedScrollEnabled
               showsHorizontalScrollIndicator={false}
               snapToAlignment="start"
               snapToInterval={categoryPageInterval}
@@ -208,6 +254,7 @@ export function DashboardScreen() {
         <SectionHeader title="Upcoming" />
         <ScrollView
           contentContainerStyle={styles.upcomingScroller}
+          directionalLockEnabled
           horizontal
           showsHorizontalScrollIndicator={false}
         >
@@ -245,6 +292,7 @@ export function DashboardScreen() {
         <SectionHeader title="Income" />
         <ScrollView
           contentContainerStyle={styles.incomeScroller}
+          directionalLockEnabled
           horizontal
           showsHorizontalScrollIndicator={false}
         >
@@ -389,6 +437,10 @@ const styles = StyleSheet.create({
   reviewButton: {
     alignItems: 'center',
     marginTop: 18
+  },
+  reviewButtonPressed: {
+    opacity: 0.84,
+    transform: [{ scale: 0.99 }]
   },
   reviewButtonText: {
     color: colors.accent,

@@ -15,6 +15,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { authRedirectTo, signInWithGoogle } from '../lib/auth';
+import { hapticSelection, hapticSoft, hapticWarning } from '../lib/haptics';
 import { supabase } from '../lib/supabase';
 import { clamp, colors, fonts, radii } from '../theme';
 
@@ -41,6 +42,7 @@ export function AuthScreen() {
 
   async function handleEmailAuth() {
     if (!email.trim() || !password.trim()) {
+      hapticWarning();
       Alert.alert('Missing details', 'Enter both email and password to continue.');
       return;
     }
@@ -80,12 +82,14 @@ export function AuthScreen() {
       }
 
       if (!session) {
+        hapticSoft();
         Alert.alert(
           'Check your inbox',
           'Supabase created the account. Approve the email verification link, then sign in.'
         );
       }
     } catch (error) {
+      hapticWarning();
       const message = error instanceof Error ? error.message : 'Something went wrong.';
       Alert.alert('Authentication error', message);
     } finally {
@@ -94,11 +98,13 @@ export function AuthScreen() {
   }
 
   async function handleGoogleAuth() {
+    hapticSoft();
     setLoading(true);
 
     try {
       await signInWithGoogle();
     } catch (error) {
+      hapticWarning();
       const message = error instanceof Error ? error.message : 'Something went wrong.';
       Alert.alert('Google sign-in error', message);
     } finally {
@@ -138,7 +144,10 @@ export function AuthScreen() {
           <View style={styles.card}>
             <View style={styles.modeRail}>
               <Pressable
-                onPress={() => setMode('sign-in')}
+                onPress={() => {
+                  hapticSelection();
+                  setMode('sign-in');
+                }}
                 style={[styles.modeButton, mode === 'sign-in' ? styles.modeButtonActive : null]}
               >
                 <Text
@@ -149,7 +158,10 @@ export function AuthScreen() {
                 </Text>
               </Pressable>
               <Pressable
-                onPress={() => setMode('sign-up')}
+                onPress={() => {
+                  hapticSelection();
+                  setMode('sign-up');
+                }}
                 style={[styles.modeButton, mode === 'sign-up' ? styles.modeButtonActive : null]}
               >
                 <Text

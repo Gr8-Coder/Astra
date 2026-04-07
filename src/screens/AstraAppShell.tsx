@@ -1,8 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useMemo, useRef, useState } from 'react';
+import { type Session } from '@supabase/supabase-js';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { startTransition, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
+  Alert,
   Pressable,
   StyleSheet,
   Text,
@@ -12,6 +15,23 @@ import {
 import PagerView, { type PagerViewOnPageSelectedEvent } from 'react-native-pager-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { type RecurringItem } from '../data/recurring';
+import {
+  transactionCategoryOptions,
+  type TransactionGroup,
+  type TransactionItem
+} from '../data/transactions';
+import {
+  addTransactionAndReloadGroups,
+  clearTransactionsAndStartFreshSmsTracking,
+  inferCategoryLabel,
+  loadTransactionGroups,
+  removeRecurringPaymentAndReloadGroups,
+  syncSmsTransactionsFromNow,
+  upsertRecurringPaymentAndReloadGroups
+} from '../lib/transactions';
+import { isSmsSyncUnavailableError } from '../lib/androidSms';
+import { hapticSelection, hapticSoft } from '../lib/haptics';
 import { clamp, colors, fonts, radii } from '../theme';
 import { AccountsScreen } from './AccountsScreen';
 import { CategoriesScreen } from './CategoriesScreen';
@@ -23,11 +43,151 @@ import { TransactionsScreen } from './TransactionsScreen';
 const tabs = ['Accounts', 'Investments', 'Transactions', 'Dashboard', 'Categories', 'Recurring'] as const;
 const initialTab = 'Dashboard' as const;
 const AnimatedPagerView = Animated.createAnimatedComponent(PagerView);
+const recurringAmountEpsilon = 0.01;
+const oneTimeFreshStartKeyPrefix = 'astra.transactions.fresh-start-applied';
+const fallbackCategoryVisual = {
+  icon: '✨',
+  label: 'Other',
+  pillColor: '#4C76D6'
+};
+
+const categoryVisualByLabel = transactionCategoryOptions.reduce<
+  Record<string, { icon: string; label: string; pillColor: string }>
+>((lookup, option) => {
+  lookup[option.label.trim().toLowerCase()] = {
+    icon: option.icon,
+    label: option.label,
+    pillColor: option.pillColor
+  };
+
+  return lookup;
+}, {});
 
 type Tab = (typeof tabs)[number];
 
-export function AstraAppShell() {
+function normalizeValue(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function roundMoney(value: number) {
+  return Math.round(value * 100) / 100;
+}
+
+function amountLabelFromAmount(amount: number) {
+  const hasDecimals = amount % 1 !== 0;
+
+  if (!hasDecimals) {
+    return undefined;
+  }
+
+  return `₹ ${amount.toLocaleString('en-IN', {
+    maximumFractionDigits: 2,
+    minimumFractionDigits: 2
+  })}`;
+}
+
+function buildOptimisticRecurringTransactionItem(item: RecurringItem): TransactionItem {
+  const roundedAmount = Math.round(Math.abs(item.amount) * 100) / 100;
+  const inferredCategory = inferCategoryLabel(item.label, item.categoryLabel);
+  const categoryVisual = categoryVisualByLabel[normalizeValue(inferredCategory)] ?? fallbackCategoryVisual;
+
+  return {
+    amount: roundedAmount,
+    amountLabel: amountLabelFromAmount(roundedAmount),
+    category: categoryVisual.label,
+    categoryIcon: categoryVisual.icon,
+    merchant: item.label,
+    pillColor: categoryVisual.pillColor,
+    recurringItemId: item.id,
+    source: 'recurring'
+  };
+}
+
+function isSameRecurringTransaction(
+  transaction: TransactionItem,
+  recurringItem: RecurringItem,
+  inferredCategory: string
+) {
+  if (transaction.recurringItemId) {
+    return transaction.recurringItemId === recurringItem.id;
+  }
+
+  if (transaction.source !== 'recurring') {
+    return false;
+  }
+
+  const isSameMerchant = normalizeValue(transaction.merchant) === normalizeValue(recurringItem.label);
+  const isSameAmount = Math.abs(transaction.amount - recurringItem.amount) < recurringAmountEpsilon;
+  const isSameCategory = normalizeValue(transaction.category) === normalizeValue(inferredCategory);
+
+  return isSameMerchant && isSameAmount && isSameCategory;
+}
+
+function applyOptimisticRecurringMutation(
+  groups: TransactionGroup[],
+  recurringItem: RecurringItem,
+  nextPaid: boolean
+): TransactionGroup[] {
+  const inferredCategory = inferCategoryLabel(recurringItem.label, recurringItem.categoryLabel);
+  const withoutRecurringEntry: TransactionGroup[] = groups
+    .map((group) => ({
+      ...group,
+      transactions: group.transactions.filter(
+        (transaction) => !isSameRecurringTransaction(transaction, recurringItem, inferredCategory)
+      )
+    }))
+    .filter((group) => group.transactions.length > 0);
+
+  if (!nextPaid) {
+    return withoutRecurringEntry;
+  }
+
+  const nextTransaction = buildOptimisticRecurringTransactionItem(recurringItem);
+  const todayIndex = withoutRecurringEntry.findIndex((group) => group.label === 'Today');
+
+  if (todayIndex === -1) {
+    return [
+      {
+        label: 'Today',
+        tone: 'today' as const,
+        transactions: [nextTransaction]
+      },
+      ...withoutRecurringEntry
+    ];
+  }
+
+  return withoutRecurringEntry.map((group, index) =>
+    index === todayIndex
+      ? {
+          ...group,
+          transactions: [nextTransaction, ...group.transactions]
+        }
+      : group
+  );
+}
+
+type AstraAppShellProps = {
+  session: Session;
+};
+
+export function AstraAppShell({ session }: AstraAppShellProps) {
   const [activeTab, setActiveTab] = useState<Tab>(initialTab);
+  const [transactionGroups, setTransactionGroups] = useState<TransactionGroup[]>([]);
+  const [optimisticCategoryDeltas, setOptimisticCategoryDeltas] = useState<Record<string, number>>({});
+  const [smsSyncHint, setSmsSyncHint] = useState('SMS sync will start from now when you open Transactions.');
+  const [dataRefreshToken, setDataRefreshToken] = useState(0);
+  const transactionGroupsRef = useRef<TransactionGroup[]>([]);
+  const smsWarningShownRef = useRef(false);
+  const [transactionsReady, setTransactionsReady] = useState(false);
+  const [mountedTabs, setMountedTabs] = useState<Record<Tab, boolean>>(() =>
+    tabs.reduce(
+      (accumulator, tab) => {
+        accumulator[tab] = tab === initialTab;
+        return accumulator;
+      },
+      {} as Record<Tab, boolean>
+    )
+  );
   const { width } = useWindowDimensions();
   const pagerRef = useRef<PagerView>(null);
   const pagePosition = useRef(new Animated.Value(tabs.indexOf(initialTab))).current;
@@ -65,10 +225,59 @@ export function AstraAppShell() {
     [pageOffset, pagePosition]
   );
 
+  useEffect(() => {
+    transactionGroupsRef.current = transactionGroups;
+  }, [transactionGroups]);
+
+  function ensureTabMounted(tab: Tab) {
+    setMountedTabs((current) => (current[tab] ? current : { ...current, [tab]: true }));
+  }
+
+  function bumpDataRefreshToken() {
+    setDataRefreshToken((current) => current + 1);
+  }
+
+  function applyOptimisticCategoryDelta(categoryLabel: string, delta: number) {
+    if (!Number.isFinite(delta) || Math.abs(delta) <= 0.0001) {
+      return;
+    }
+
+    const key = normalizeValue(categoryLabel);
+
+    if (!key) {
+      return;
+    }
+
+    setOptimisticCategoryDeltas((current) => {
+      const next = { ...current };
+      const nextValue = roundMoney((next[key] ?? 0) + delta);
+
+      if (Math.abs(nextValue) <= 0.0001) {
+        delete next[key];
+      } else {
+        next[key] = nextValue;
+      }
+
+      return next;
+    });
+  }
+
   function handleTabPress(tab: Tab) {
     const index = tabs.indexOf(tab);
+    hapticSelection();
+    ensureTabMounted(tab);
     setActiveTab(tab);
     pagerRef.current?.setPage(index);
+  }
+
+  function handleHeaderAction(kind: 'chat' | 'settings') {
+    hapticSoft();
+    Alert.alert(
+      'Coming soon',
+      kind === 'settings'
+        ? 'Settings panel will be connected in the next pass.'
+        : 'In-app support chat will be connected in the next pass.'
+    );
   }
 
   function handlePageSelected(event: PagerViewOnPageSelectedEvent) {
@@ -76,9 +285,196 @@ export function AstraAppShell() {
     const nextTab = tabs[nextIndex];
 
     if (nextTab && nextTab !== activeTab) {
+      hapticSelection();
+      ensureTabMounted(nextTab);
       setActiveTab(nextTab);
+    } else if (nextTab) {
+      ensureTabMounted(nextTab);
     }
   }
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function bootstrapTransactions() {
+      setTransactionsReady(false);
+
+      try {
+        const freshStartKey = `${oneTimeFreshStartKeyPrefix}.${session.user.id}`;
+        const hasAppliedFreshStart = Boolean(await AsyncStorage.getItem(freshStartKey));
+        const loadedGroups = hasAppliedFreshStart
+          ? await loadTransactionGroups(session.user.id)
+          : await clearTransactionsAndStartFreshSmsTracking(session.user.id);
+
+        if (!hasAppliedFreshStart) {
+          await AsyncStorage.setItem(freshStartKey, '1');
+        }
+
+        if (isMounted) {
+          transactionGroupsRef.current = loadedGroups;
+          if (!hasAppliedFreshStart) {
+            setSmsSyncHint('Fresh start enabled. Older transactions were cleared.');
+          }
+          startTransition(() => {
+            setTransactionGroups(loadedGroups);
+          });
+        }
+      } catch (error) {
+        console.warn('[transactions] failed to bootstrap', error);
+
+        if (isMounted) {
+          Alert.alert(
+            'Sync warning',
+            'Could not load transactions from the cloud.'
+          );
+          transactionGroupsRef.current = [];
+          startTransition(() => {
+            setTransactionGroups([]);
+          });
+        }
+      } finally {
+        if (isMounted) {
+          setTransactionsReady(true);
+        }
+      }
+    }
+
+    void bootstrapTransactions();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [session.user.id]);
+
+  async function handleAddTransaction(nextItem: TransactionItem) {
+    const refreshedGroups = await addTransactionAndReloadGroups(session.user.id, nextItem);
+    transactionGroupsRef.current = refreshedGroups;
+    startTransition(() => {
+      setTransactionGroups(refreshedGroups);
+    });
+    bumpDataRefreshToken();
+  }
+
+  async function handleStartFreshFromNow() {
+    const refreshedGroups = await clearTransactionsAndStartFreshSmsTracking(session.user.id);
+    transactionGroupsRef.current = refreshedGroups;
+    setSmsSyncHint('Fresh start enabled. Only new SMS from now will be tracked.');
+    startTransition(() => {
+      setTransactionGroups(refreshedGroups);
+    });
+    bumpDataRefreshToken();
+  }
+
+  async function handleRecurringPaymentStateChange({
+    item,
+    nextPaid
+  }: {
+    item: RecurringItem;
+    nextPaid: boolean;
+  }) {
+    const inferredCategoryLabel = inferCategoryLabel(item.label, item.categoryLabel);
+    const optimisticDelta = nextPaid ? roundMoney(item.amount) : -roundMoney(item.amount);
+    applyOptimisticCategoryDelta(inferredCategoryLabel, optimisticDelta);
+
+    const previousGroups = transactionGroupsRef.current;
+    const optimisticGroups = applyOptimisticRecurringMutation(previousGroups, item, nextPaid);
+    transactionGroupsRef.current = optimisticGroups;
+    startTransition(() => {
+      setTransactionGroups(optimisticGroups);
+    });
+
+    try {
+      const refreshedGroups = nextPaid
+        ? await upsertRecurringPaymentAndReloadGroups(session.user.id, {
+            amount: item.amount,
+            categoryLabel: item.categoryLabel,
+            merchant: item.label,
+            recurringItemId: item.id
+          })
+        : await removeRecurringPaymentAndReloadGroups(session.user.id, item.id);
+
+      transactionGroupsRef.current = refreshedGroups;
+      startTransition(() => {
+        setTransactionGroups(refreshedGroups);
+      });
+      applyOptimisticCategoryDelta(inferredCategoryLabel, -optimisticDelta);
+      bumpDataRefreshToken();
+    } catch (error) {
+      transactionGroupsRef.current = previousGroups;
+      startTransition(() => {
+        setTransactionGroups(previousGroups);
+      });
+      applyOptimisticCategoryDelta(inferredCategoryLabel, -optimisticDelta);
+      throw error;
+    }
+  }
+
+  useEffect(() => {
+    if (activeTab !== 'Transactions') {
+      return;
+    }
+
+    let active = true;
+    let syncInFlight = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    async function runSync() {
+      if (!active || syncInFlight) {
+        return;
+      }
+
+      syncInFlight = true;
+
+      try {
+        const result = await syncSmsTransactionsFromNow(session.user.id);
+
+        if (!active) {
+          return;
+        }
+
+        transactionGroupsRef.current = result.groups;
+        startTransition(() => {
+          setTransactionGroups(result.groups);
+        });
+
+        if (result.trackingStarted) {
+          setSmsSyncHint('SMS tracking started from now. Older messages are ignored.');
+        } else if (result.syncedCount > 0) {
+          setSmsSyncHint(`Synced ${result.syncedCount} new SMS transactions.`);
+          bumpDataRefreshToken();
+        } else {
+          setSmsSyncHint('Watching for new bank SMS from now.');
+        }
+      } catch (error) {
+        if (isSmsSyncUnavailableError(error)) {
+          if (!smsWarningShownRef.current && active) {
+            smsWarningShownRef.current = true;
+            setSmsSyncHint('Enable SMS permission on Android to auto-sync new transactions.');
+          }
+        } else {
+          console.warn('[transactions] sms sync failed', error);
+        }
+      } finally {
+        syncInFlight = false;
+      }
+
+      if (active) {
+        timer = setTimeout(() => {
+          void runSync();
+        }, 18000);
+      }
+    }
+
+    void runSync();
+
+    return () => {
+      active = false;
+
+      if (timer) {
+        clearTimeout(timer);
+      }
+    };
+  }, [activeTab, session.user.id]);
 
   return (
     <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
@@ -113,10 +509,16 @@ export function AstraAppShell() {
           ]}
         >
           <View style={styles.headerActionsRow}>
-            <Pressable style={styles.headerIconButton}>
+            <Pressable
+              onPress={() => handleHeaderAction('settings')}
+              style={({ pressed }) => [styles.headerIconButton, pressed ? styles.headerIconButtonPressed : null]}
+            >
               <Ionicons color={colors.accentSoft} name="settings-sharp" size={22} />
             </Pressable>
-            <Pressable style={styles.headerIconButton}>
+            <Pressable
+              onPress={() => handleHeaderAction('chat')}
+              style={({ pressed }) => [styles.headerIconButton, pressed ? styles.headerIconButtonPressed : null]}
+            >
               <Ionicons color={colors.accentSoft} name="chatbox-ellipses-outline" size={21} />
             </Pressable>
           </View>
@@ -202,33 +604,55 @@ export function AstraAppShell() {
         <View style={styles.content}>
           <AnimatedPagerView
             initialPage={tabs.indexOf(initialTab)}
+            offscreenPageLimit={1}
             onPageScroll={pagerPageScrollHandler}
             onPageSelected={handlePageSelected}
             ref={pagerRef}
             style={styles.pager}
           >
             <View collapsable={false} style={styles.screenPage}>
-              <AccountsScreen />
+              {mountedTabs.Accounts ? (
+                <AccountsScreen refreshToken={dataRefreshToken} userId={session.user.id} />
+              ) : null}
             </View>
 
             <View collapsable={false} style={styles.screenPage}>
-              <InvestmentsScreen />
+              {mountedTabs.Investments ? <InvestmentsScreen /> : null}
             </View>
 
             <View collapsable={false} style={styles.screenPage}>
-              <TransactionsScreen />
+              {mountedTabs.Transactions ? (
+                <TransactionsScreen
+                  onAddTransaction={handleAddTransaction}
+                  onStartFreshFromNow={handleStartFreshFromNow}
+                  ready={transactionsReady}
+                  smsSyncHint={smsSyncHint}
+                  transactionGroups={transactionGroups}
+                />
+              ) : null}
             </View>
 
             <View collapsable={false} style={styles.screenPage}>
-              <DashboardScreen />
+              {mountedTabs.Dashboard ? (
+                <DashboardScreen refreshToken={dataRefreshToken} userId={session.user.id} />
+              ) : null}
             </View>
 
             <View collapsable={false} style={styles.screenPage}>
-              <CategoriesScreen />
+              {mountedTabs.Categories ? (
+                <CategoriesScreen
+                  onDataMutation={bumpDataRefreshToken}
+                  optimisticCategoryDeltas={optimisticCategoryDeltas}
+                  refreshToken={dataRefreshToken}
+                  userId={session.user.id}
+                />
+              ) : null}
             </View>
 
             <View collapsable={false} style={styles.screenPage}>
-              <RecurringScreen />
+              {mountedTabs.Recurring ? (
+                <RecurringScreen onRecurringPaymentStateChange={handleRecurringPaymentStateChange} />
+              ) : null}
             </View>
           </AnimatedPagerView>
         </View>
@@ -277,13 +701,17 @@ const styles = StyleSheet.create({
   },
   headerIconButton: {
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderColor: colors.borderSoft,
     borderRadius: 18,
     borderWidth: 1,
     height: 38,
     justifyContent: 'center',
     width: 38
+  },
+  headerIconButtonPressed: {
+    opacity: 0.84,
+    transform: [{ scale: 0.96 }]
   },
   logo: {
     color: colors.textPrimary,
@@ -306,6 +734,8 @@ const styles = StyleSheet.create({
     borderWidth: 1
   },
   activeTabPill: {
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderWidth: 1,
     borderRadius: radii.pill,
     height: 42,
     position: 'absolute',
@@ -323,7 +753,8 @@ const styles = StyleSheet.create({
     minHeight: 50
   },
   tabButtonPressed: {
-    opacity: 0.82
+    opacity: 0.82,
+    transform: [{ scale: 0.985 }]
   },
   tabText: {
     fontFamily: fonts.medium,

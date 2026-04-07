@@ -87,7 +87,7 @@ export default function App() {
           <ActivityIndicator color={colors.accent} size="small" />
         </View>
       ) : session ? (
-        <AstraAppShell />
+        <AstraAppShell session={session} />
       ) : (
         <AuthScreen />
       )}

@@ -1,10 +1,15 @@
 export type TransactionItem = {
   amount: number;
   amountLabel?: string;
+  bankName?: string;
   category: string;
   categoryIcon: string;
+  isManual?: boolean;
   merchant: string;
   pillColor: string;
+  recurringItemId?: string;
+  subtitle?: string;
+  source?: string;
 };
 
 export type TransactionGroup = {
@@ -12,6 +17,100 @@ export type TransactionGroup = {
   tone?: 'muted' | 'today';
   transactions: TransactionItem[];
 };
+
+export type TransactionCategoryOption = {
+  icon: string;
+  label: string;
+  pillColor: string;
+};
+
+export const transactionCategoryOptions: TransactionCategoryOption[] = [
+  {
+    icon: '🔑',
+    label: 'Rent',
+    pillColor: '#D13B3B'
+  },
+  {
+    icon: '🍽️',
+    label: 'Food & Drink',
+    pillColor: '#48B950'
+  },
+  {
+    icon: '🥑',
+    label: 'Groceries',
+    pillColor: '#59BE49'
+  },
+  {
+    icon: '🍔',
+    label: 'Restaurant',
+    pillColor: '#58B949'
+  },
+  {
+    icon: '☕',
+    label: 'Coffee',
+    pillColor: '#54B647'
+  },
+  {
+    icon: '🚕',
+    label: 'Travel',
+    pillColor: '#4820D0'
+  },
+  {
+    icon: '🏖️',
+    label: 'Travel & Vacation',
+    pillColor: '#A92A9F'
+  },
+  {
+    icon: '👕',
+    label: 'Clothing',
+    pillColor: '#326BC5'
+  },
+  {
+    icon: '🛒',
+    label: 'Shopping',
+    pillColor: '#4E66D6'
+  },
+  {
+    icon: '🛍️',
+    label: 'Shop',
+    pillColor: '#326BC5'
+  },
+  {
+    icon: '💊',
+    label: 'Healthcare',
+    pillColor: '#A32A63'
+  },
+  {
+    icon: '🎬',
+    label: 'Entertainment',
+    pillColor: '#7149E8'
+  },
+  {
+    icon: '🔌',
+    label: 'Utilities',
+    pillColor: '#2F90D5'
+  },
+  {
+    icon: '📺',
+    label: 'Streaming',
+    pillColor: '#2F90D5'
+  },
+  {
+    icon: '🚗',
+    label: 'Car & Transport',
+    pillColor: '#2DBDC7'
+  },
+  {
+    icon: '🏋️',
+    label: 'Gym',
+    pillColor: '#D07A3C'
+  },
+  {
+    icon: '✨',
+    label: 'Other',
+    pillColor: '#4C76D6'
+  }
+];
 
 export const transactionGroups: TransactionGroup[] = [
   {
