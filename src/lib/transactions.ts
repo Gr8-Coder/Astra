@@ -6,6 +6,11 @@ import {
 } from '../data/transactions';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { scanBankSmsTransactions, type SmsTransactionDraft } from './androidSms';
+import {
+  ensureAstraAgentReady,
+  learnFromUserCategoryFeedback,
+  predictCategoryWithAstraAgent
+} from './agentLearning';
 import { ingestTransactions } from './ledgerIngestion';
 import { supabase } from './supabase';
 
@@ -54,8 +59,10 @@ type LoadTransactionGroupsOptions = {
 
 export type SmsSyncRunResult = {
   groups: TransactionGroup[];
+  matchedCount: number;
   scannedCount: number;
   syncedCount: number;
+  transactions: SmsTransactionDraft[];
   trackingStarted: boolean;
 };
 
@@ -532,14 +539,22 @@ export async function clearTransactionsAndStartFreshSmsTracking(userId: string) 
 }
 
 export async function syncSmsTransactionsFromNow(userId: string): Promise<SmsSyncRunResult> {
+  try {
+    await ensureAstraAgentReady(userId);
+  } catch (error) {
+    console.warn('[agent] bootstrap skipped for sms sync', error);
+  }
+
   const tracking = await ensureSmsTrackingStart(userId);
   const now = Date.now();
 
   if (tracking.trackingStartedNow) {
     return {
       groups: await fetchStoredTransactionGroups(userId),
+      matchedCount: 0,
       scannedCount: 0,
       syncedCount: 0,
+      transactions: [],
       trackingStarted: true
     };
   }
@@ -561,13 +576,24 @@ export async function syncSmsTransactionsFromNow(userId: string): Promise<SmsSyn
 
   return {
     groups,
+    matchedCount: scan.matchedCount,
     scannedCount: scan.scannedCount,
     syncedCount: scan.transactions.length,
+    transactions: scan.transactions,
     trackingStarted: false
   };
 }
 
 export async function addTransactionAndReloadGroups(userId: string, item: TransactionItem) {
+  await learnFromUserCategoryFeedback({
+    categoryLabel: item.category,
+    merchant: item.merchant,
+    source: 'manual',
+    userId
+  }).catch((error) => {
+    console.warn('[agent] manual feedback learning failed', error);
+  });
+
   await ingestTransactions({
     events: [
       {
@@ -606,8 +632,12 @@ export async function upsertExternalTransactionsAndReloadGroups(
     return fetchStoredTransactionGroups(userId);
   }
 
-  const events = items
-    .map((item) => {
+  await ensureAstraAgentReady(userId).catch((error) => {
+    console.warn('[agent] bootstrap skipped for external upsert', error);
+  });
+
+  const eventCandidates = await Promise.all(
+    items.map(async (item) => {
       const merchant = item.merchant.trim();
       const providerTransactionId = item.providerTransactionId.trim();
       const roundedAmount = Math.round(Math.abs(item.amount) * 100) / 100;
@@ -616,9 +646,15 @@ export async function upsertExternalTransactionsAndReloadGroups(
         return null;
       }
 
-      const categoryLabel =
-        item.direction === 'credit' ? 'Income' : inferCategoryLabel(item.merchant);
-      const visuals = visualsForDirectionAndCategory(item.direction, categoryLabel);
+      const fallbackCategoryLabel = item.direction === 'credit' ? 'Income' : inferCategoryLabel(item.merchant);
+      const prediction = await predictCategoryWithAstraAgent({
+        direction: item.direction,
+        fallbackCategoryLabel,
+        merchant: item.merchant,
+        rawBody: item.rawBody,
+        userId
+      });
+      const visuals = visualsForDirectionAndCategory(item.direction, prediction.categoryLabel);
 
       return {
         amount: roundedAmount,
@@ -633,6 +669,11 @@ export async function upsertExternalTransactionsAndReloadGroups(
           bank_name: item.bankName ?? null,
           category_icon: visuals.icon,
           category_label: visuals.label,
+          agent_confidence: prediction.confidence,
+          agent_model_version: prediction.modelVersion,
+          agent_prompt_version: prediction.promptVersion,
+          agent_reason: prediction.reason,
+          agent_used_fallback: prediction.usedFallback,
           pill_color: visuals.pillColor,
           seeded: false,
           sms_sender: item.sender ?? null,
@@ -650,12 +691,14 @@ export async function upsertExternalTransactionsAndReloadGroups(
           booked_at: item.bookedAt.toISOString(),
           direction: item.direction,
           merchant,
+          prediction,
           sender: item.sender ?? null,
           tx_raw_body: item.rawBody ?? null
         }
       };
     })
-    .filter((event): event is NonNullable<typeof event> => Boolean(event));
+  );
+  const events = eventCandidates.filter((event): event is NonNullable<typeof event> => Boolean(event));
 
   if (!events.length) {
     return fetchStoredTransactionGroups(userId);
@@ -703,16 +746,41 @@ export async function upsertRecurringPaymentAndReloadGroups(
 
   const bookedAt = input.bookedAt ?? new Date();
   const recurringPeriod = recurringPeriodKey(bookedAt);
-  const categoryLabel = inferCategoryLabel(input.merchant, input.categoryLabel);
+  const fallbackCategoryLabel = inferCategoryLabel(input.merchant, input.categoryLabel);
+  const prediction = await predictCategoryWithAstraAgent({
+    direction: 'debit',
+    explicitCategoryLabel: input.categoryLabel,
+    fallbackCategoryLabel,
+    merchant: input.merchant,
+    userId
+  });
+  const categoryLabel = prediction.categoryLabel;
   const visuals = categoryVisuals(categoryLabel);
   const metadata = {
     ...recurringMetadataFilter(input.recurringItemId, recurringPeriod),
     amount_label: amountLabelFromAmount(roundedAmount) ?? null,
+    agent_confidence: prediction.confidence,
+    agent_model_version: prediction.modelVersion,
+    agent_prompt_version: prediction.promptVersion,
+    agent_reason: prediction.reason,
+    agent_used_fallback: prediction.usedFallback,
     category_icon: visuals.icon,
     category_label: visuals.label,
     pill_color: visuals.pillColor,
     seeded: false
   };
+
+  if (input.categoryLabel?.trim()) {
+    await learnFromUserCategoryFeedback({
+      categoryLabel: input.categoryLabel,
+      merchant: input.merchant,
+      source: 'recurring',
+      userId
+    }).catch((error) => {
+      console.warn('[agent] recurring feedback learning failed', error);
+    });
+  }
+
   await ingestTransactions({
     events: [
       {

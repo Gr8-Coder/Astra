@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Astra Security | Trust and controls</title>
+    <meta
+      name="description"
+      content="How Astra handles finance data: consent, connectors, encryption boundaries, and staged integration strategy."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./premium.css" />
+  </head>
+  <body>
+    <div class="bg-grid"></div>
+    <div class="bg-noise"></div>
+    <div class="bg-orb one"></div>
+    <div class="bg-orb two"></div>
+
+    <header class="site-header">
+      <div class="header-wrap">
+        <a class="brand" href="./index.html">
+          <span class="brand-mark"></span>
+          Astra
+        </a>
+        <button class="menu-toggle" type="button">Menu</button>
+        <nav class="nav">
+          <a data-page="index.html" href="./index.html">Home</a>
+          <a data-page="features.html" href="./features.html">Features</a>
+          <a data-page="ai.html" href="./ai.html">AI Layer</a>
+          <a data-page="security.html" href="./security.html">Security</a>
+          <a class="header-cta btn primary" data-page="download" href="./index.html#download">Get Astra</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="hero">
+        <div class="hero-copy" data-reveal>
+          <div class="eyebrow">Trust architecture</div>
+          <h1>Security and data controls built into product design.</h1>
+          <p>
+            Personal finance apps win only when users trust data handling. Astra is being structured with explicit
+            consent boundaries, connector isolation, and transparent data provenance from day one.
+          </p>
+          <div class="hero-actions">
+            <a class="btn primary" href="./index.html#download">Talk to Astra team</a>
+            <a class="btn secondary" href="./ai.html">Review AI guardrails</a>
+          </div>
+        </div>
+        <aside class="hero-panel" data-reveal>
+          <div class="panel-head">
+            <div>
+              <div class="panel-title">Current trust posture</div>
+              <div class="panel-sub">MVP guardrails with production path defined</div>
+            </div>
+          </div>
+          <div class="panel-list">
+            <div class="panel-item">
+              <div>
+                <strong>Scoped capture model</strong>
+                <small>SMS ingestion can begin from "now onward" to avoid over-collection</small>
+              </div>
+            </div>
+            <div class="panel-item">
+              <div>
+                <strong>Connector abstraction layer</strong>
+                <small>Provider integration is isolated from UI components</small>
+              </div>
+            </div>
+            <div class="panel-item">
+              <div>
+                <strong>User-first controls</strong>
+                <small>Delete and overwrite actions are available at account level</small>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section>
+        <div class="section-head" data-reveal>
+          <div>
+            <div class="kicker">Security pillars</div>
+            <h2>Practical controls users can understand</h2>
+          </div>
+          <p>Security should be visible and usable, not hidden in legal text.</p>
+        </div>
+        <div class="security-grid">
+          <article class="security-card" data-reveal>
+            <h3>Consent-first ingestion</h3>
+            <p>
+              Data streams are opt-in, and users can choose onboarding modes. SMS parsing can be constrained to new
+              events for privacy-forward adoption.
+            </p>
+          </article>
+          <article class="security-card" data-reveal>
+            <h3>Source provenance</h3>
+            <p>
+              Each transaction can carry metadata about where it came from: manual entry, recurring engine, SMS, or
+              future connector providers.
+            </p>
+          </article>
+          <article class="security-card" data-reveal>
+            <h3>Isolation by interface</h3>
+            <p>
+              Connector bridge modules sit behind typed adapters, letting infrastructure evolve without exposing raw
+              provider behavior directly in UI.
+            </p>
+          </article>
+          <article class="security-card" data-reveal>
+            <h3>Progressive hardening</h3>
+            <p>
+              MVP starts with scoped capabilities and gradually adds regulated connectors, retry orchestration, and sync
+              audit metrics.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section>
+        <div class="section-head" data-reveal>
+          <div>
+            <div class="kicker">Connector blueprint</div>
+            <h2>Production path without changing user flows</h2>
+          </div>
+          <p>
+            The same Astra screens can run on manual mode today and switch to approved providers later using connector
+            adapters and token exchange patterns.
+          </p>
+        </div>
+        <div class="diagram" data-reveal>
+          <div class="diagram-grid">
+            <div class="node">
+              <strong>User app</strong>
+              Accounts, transactions, recurring, categories, investments
+            </div>
+            <div class="arrow">-></div>
+            <div class="node">
+              <strong>Connector bridge</strong>
+              Session states, retries, provider adapters, ingest queue
+            </div>
+            <div class="arrow">-></div>
+            <div class="node">
+              <strong>Regulated providers</strong>
+              AA/FIU partners, statement import, future bank integrations
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="section-head" data-reveal>
+          <div>
+            <div class="kicker">Launch posture</div>
+            <h2>What Astra will communicate publicly</h2>
+          </div>
+          <p>Clear communication creates trust before any technical feature does.</p>
+        </div>
+        <div class="table" data-reveal>
+          <div class="table-row head">
+            <div>Policy area</div>
+            <div>Commitment</div>
+            <div>User control</div>
+          </div>
+          <div class="table-row">
+            <div><strong>Data retention</strong></div>
+            <div>Keep only what powers user outcomes</div>
+            <div>Delete account and clear linked records</div>
+          </div>
+          <div class="table-row">
+            <div><strong>Data source labeling</strong></div>
+            <div>Show source for each money event</div>
+            <div>Review and correct category mapping</div>
+          </div>
+          <div class="table-row">
+            <div><strong>Automation boundaries</strong></div>
+            <div>No autonomous transfers without approval</div>
+            <div>Explicit action gates in the UI</div>
+          </div>
+          <div class="table-row">
+            <div><strong>AI explainability</strong></div>
+            <div>Suggestions with reasoning and confidence</div>
+            <div>One-tap override and feedback loop</div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="footer-wrap">
+        <div>Astra Trust Layer</div>
+        <div>
+          <a href="./index.html">Home</a> |
+          <a href="./features.html">Features</a> |
+          <a href="./ai.html">AI Layer</a>
+        </div>
+      </div>
+    </footer>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

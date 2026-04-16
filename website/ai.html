@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Astra AI Layer | Agent architecture</title>
+    <meta
+      name="description"
+      content="Astra's upcoming AI layer: categorization, forecasting, anomaly detection, and personalized financial copiloting."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./premium.css" />
+  </head>
+  <body>
+    <div class="bg-grid"></div>
+    <div class="bg-noise"></div>
+    <div class="bg-orb one"></div>
+    <div class="bg-orb two"></div>
+
+    <header class="site-header">
+      <div class="header-wrap">
+        <a class="brand" href="./index.html">
+          <span class="brand-mark"></span>
+          Astra
+        </a>
+        <button class="menu-toggle" type="button">Menu</button>
+        <nav class="nav">
+          <a data-page="index.html" href="./index.html">Home</a>
+          <a data-page="features.html" href="./features.html">Features</a>
+          <a data-page="ai.html" href="./ai.html">AI Layer</a>
+          <a data-page="security.html" href="./security.html">Security</a>
+          <a class="header-cta btn primary" data-page="download" href="./index.html#download">Get Astra</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="hero">
+        <div class="hero-copy" data-reveal>
+          <div class="eyebrow">Astra intelligence</div>
+          <h1>Agent-driven finance guidance without losing human control.</h1>
+          <p>
+            Astra's AI layer is designed as practical operators, not black-box magic. Each agent has clear inputs,
+            output confidence, and user override pathways so intelligence improves trust rather than replacing it.
+          </p>
+          <div class="hero-actions">
+            <a class="btn primary" href="./features.html">Review data surfaces</a>
+            <a class="btn secondary" href="./security.html">See control and safety model</a>
+          </div>
+        </div>
+        <aside class="hero-panel" data-reveal>
+          <div class="panel-head">
+            <div>
+              <div class="panel-title">Agent operating model</div>
+              <div class="panel-sub">Observe -> Explain -> Recommend -> Execute (with approval)</div>
+            </div>
+          </div>
+          <div class="panel-list">
+            <div class="panel-item">
+              <div>
+                <strong>Observable reasoning</strong>
+                <small>Users can inspect why an expense was categorized</small>
+              </div>
+            </div>
+            <div class="panel-item">
+              <div>
+                <strong>Confidence thresholds</strong>
+                <small>Low confidence routes to user confirmation flows</small>
+              </div>
+            </div>
+            <div class="panel-item">
+              <div>
+                <strong>Explicit approval gates</strong>
+                <small>No autonomous money movement without user action</small>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section>
+        <div class="section-head" data-reveal>
+          <div>
+            <div class="kicker">Planned intelligence agents</div>
+            <h2>Purpose-built agents for real financial outcomes</h2>
+          </div>
+          <p>Each agent is scoped to a concrete user problem and can be rolled out progressively.</p>
+        </div>
+        <div class="agent-grid">
+          <article class="agent-card" data-reveal>
+            <h3>Transaction Classifier Agent</h3>
+            <p>Assigns category and subcategory with confidence, bank context, and merchant normalization.</p>
+            <div class="agent-meta">
+              <span>Input: SMS / manual / connectors</span>
+              <span>Output: category + confidence</span>
+              <span>Mode: assisted</span>
+            </div>
+          </article>
+          <article class="agent-card" data-reveal>
+            <h3>Cashflow Forecaster Agent</h3>
+            <p>Projects runway, monthly net flow, and probable end-of-month standing based on current patterns.</p>
+            <div class="agent-meta">
+              <span>Input: inflow and outflow history</span>
+              <span>Output: forecast bands</span>
+              <span>Mode: read-only</span>
+            </div>
+          </article>
+          <article class="agent-card" data-reveal>
+            <h3>Subscription Guardian Agent</h3>
+            <p>Flags duplicate services, dormant subscriptions, and near-due renewals with quick action options.</p>
+            <div class="agent-meta">
+              <span>Input: recurring stack</span>
+              <span>Output: risk and savings map</span>
+              <span>Mode: recommendation</span>
+            </div>
+          </article>
+          <article class="agent-card" data-reveal>
+            <h3>Budget Rebalancer Agent</h3>
+            <p>Suggests budget transfers between categories based on trend velocity and upcoming obligations.</p>
+            <div class="agent-meta">
+              <span>Input: category burn rates</span>
+              <span>Output: reallocation proposals</span>
+              <span>Mode: user approve</span>
+            </div>
+          </article>
+          <article class="agent-card" data-reveal>
+            <h3>Anomaly Radar Agent</h3>
+            <p>Detects unusual spikes, duplicate charges, and suspicious timing deviations across accounts.</p>
+            <div class="agent-meta">
+              <span>Input: transaction stream</span>
+              <span>Output: anomaly alerts</span>
+              <span>Mode: safety first</span>
+            </div>
+          </article>
+          <article class="agent-card" data-reveal>
+            <h3>Wealth Coach Agent</h3>
+            <p>Translates spend and asset behavior into weekly coaching prompts and simple next best actions.</p>
+            <div class="agent-meta">
+              <span>Input: profile + behavior</span>
+              <span>Output: personalized plan</span>
+              <span>Mode: conversational</span>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section>
+        <div class="section-head" data-reveal>
+          <div>
+            <div class="kicker">Rollout strategy</div>
+            <h2>Confidence-led deployment sequence</h2>
+          </div>
+          <p>
+            Astra will release intelligence in phases: first classify, then explain, then recommend, and only later
+            automate low-risk actions with explicit user permissions.
+          </p>
+        </div>
+        <div class="timeline">
+          <article class="timeline-card" data-reveal>
+            <h4>Phase 1</h4>
+            <div class="meta">Assistive</div>
+            <p>Category predictions, label cleanup, and confidence scoring with quick correction actions.</p>
+          </article>
+          <article class="timeline-card" data-reveal>
+            <h4>Phase 2</h4>
+            <div class="meta">Advisory</div>
+            <p>Forecasts, anomaly detection, subscription suggestions, and budget rebalancing proposals.</p>
+          </article>
+          <article class="timeline-card" data-reveal>
+            <h4>Phase 3</h4>
+            <div class="meta">Autopilot-ready</div>
+            <p>Optional approved automations, goal tracking loops, and adaptive weekly coaching.</p>
+          </article>
+        </div>
+      </section>
+
+      <section>
+        <div class="cta-panel" data-reveal>
+          <div>
+            <h3>From tracking app to financial copilot.</h3>
+            <p>
+              Astra's agent layer is not a gimmick layer. It is the system that turns noisy money activity into clear
+              action plans.
+            </p>
+          </div>
+          <div class="hero-actions">
+            <a class="btn primary" href="./index.html#download">Partner or collaborate</a>
+            <a class="btn secondary" href="./security.html">Review controls</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="footer-wrap">
+        <div>Astra Intelligence Layer</div>
+        <div>
+          <a href="./index.html">Home</a> |
+          <a href="./features.html">Features</a> |
+          <a href="./security.html">Security</a>
+        </div>
+      </div>
+    </footer>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

@@ -6,13 +6,11 @@ import {
   Alert,
   LayoutAnimation,
   Modal,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
-  UIManager,
   useWindowDimensions,
   View
 } from 'react-native';
@@ -241,12 +239,6 @@ export function CategoriesScreen({
   const [rebalanceBudget, setRebalanceBudget] = useState('');
   const previousMetricsSignature = useRef('');
   const hasBootstrappedRef = useRef(false);
-
-  useEffect(() => {
-    if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-      UIManager.setLayoutAnimationEnabledExperimental(true);
-    }
-  }, []);
 
   useEffect(() => {
     let active = true;

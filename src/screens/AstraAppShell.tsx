@@ -12,7 +12,10 @@ import {
   useWindowDimensions,
   View
 } from 'react-native';
-import PagerView, { type PagerViewOnPageSelectedEvent } from 'react-native-pager-view';
+import PagerView, {
+  type PagerViewOnPageScrollEvent,
+  type PagerViewOnPageSelectedEvent
+} from 'react-native-pager-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { type RecurringItem } from '../data/recurring';
@@ -21,28 +24,29 @@ import {
   type TransactionGroup,
   type TransactionItem
 } from '../data/transactions';
+import { type AgentActionTarget } from '../lib/agents';
 import {
   addTransactionAndReloadGroups,
   clearTransactionsAndStartFreshSmsTracking,
   inferCategoryLabel,
   loadTransactionGroups,
   removeRecurringPaymentAndReloadGroups,
-  syncSmsTransactionsFromNow,
   upsertRecurringPaymentAndReloadGroups
 } from '../lib/transactions';
 import { isSmsSyncUnavailableError } from '../lib/androidSms';
 import { hapticSelection, hapticSoft } from '../lib/haptics';
+import { runSmsIntelligenceAgent } from '../lib/smsIntelligenceAgent';
 import { clamp, colors, fonts, radii } from '../theme';
 import { AccountsScreen } from './AccountsScreen';
+import { AgentsScreen } from './AgentsScreen';
 import { CategoriesScreen } from './CategoriesScreen';
 import { DashboardScreen } from './DashboardScreen';
 import { InvestmentsScreen } from './InvestmentsScreen';
 import { RecurringScreen } from './RecurringScreen';
 import { TransactionsScreen } from './TransactionsScreen';
 
-const tabs = ['Accounts', 'Investments', 'Transactions', 'Dashboard', 'Categories', 'Recurring'] as const;
+const tabs = ['Accounts', 'Investments', 'Transactions', 'Dashboard', 'Categories', 'Recurring', 'Agents'] as const;
 const initialTab = 'Dashboard' as const;
-const AnimatedPagerView = Animated.createAnimatedComponent(PagerView);
 const recurringAmountEpsilon = 0.01;
 const oneTimeFreshStartKeyPrefix = 'astra.transactions.fresh-start-applied';
 const fallbackCategoryVisual = {
@@ -217,13 +221,10 @@ export function AstraAppShell({ session }: AstraAppShellProps) {
     [navViewportWidth, scrollProgress, tabSlotWidth]
   );
 
-  const pagerPageScrollHandler = useMemo(
-    () =>
-      Animated.event([{ nativeEvent: { offset: pageOffset, position: pagePosition } }], {
-        useNativeDriver: false
-      }),
-    [pageOffset, pagePosition]
-  );
+  function handlePageScroll(event: PagerViewOnPageScrollEvent) {
+    pageOffset.setValue(event.nativeEvent.offset);
+    pagePosition.setValue(event.nativeEvent.position);
+  }
 
   useEffect(() => {
     transactionGroupsRef.current = transactionGroups;
@@ -264,6 +265,25 @@ export function AstraAppShell({ session }: AstraAppShellProps) {
 
   function handleTabPress(tab: Tab) {
     const index = tabs.indexOf(tab);
+    hapticSelection();
+    ensureTabMounted(tab);
+    setActiveTab(tab);
+    pagerRef.current?.setPage(index);
+  }
+
+  function handleAgentNavigate(targetTab: AgentActionTarget) {
+    const tab = tabs.find((item) => item === targetTab);
+
+    if (!tab) {
+      return;
+    }
+
+    const index = tabs.indexOf(tab);
+
+    if (index < 0) {
+      return;
+    }
+
     hapticSelection();
     ensureTabMounted(tab);
     setActiveTab(tab);
@@ -410,10 +430,6 @@ export function AstraAppShell({ session }: AstraAppShellProps) {
   }
 
   useEffect(() => {
-    if (activeTab !== 'Transactions') {
-      return;
-    }
-
     let active = true;
     let syncInFlight = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
@@ -426,24 +442,36 @@ export function AstraAppShell({ session }: AstraAppShellProps) {
       syncInFlight = true;
 
       try {
-        const result = await syncSmsTransactionsFromNow(session.user.id);
+        const result = await runSmsIntelligenceAgent(session.user.id);
+        const transactionSync = result.transactionSync;
+        const accountSync = result.accountSync;
 
         if (!active) {
           return;
         }
 
-        transactionGroupsRef.current = result.groups;
+        transactionGroupsRef.current = transactionSync.groups;
         startTransition(() => {
-          setTransactionGroups(result.groups);
+          setTransactionGroups(transactionSync.groups);
         });
 
-        if (result.trackingStarted) {
+        if (transactionSync.trackingStarted) {
           setSmsSyncHint('SMS tracking started from now. Older messages are ignored.');
-        } else if (result.syncedCount > 0) {
-          setSmsSyncHint(`Synced ${result.syncedCount} new SMS transactions.`);
+        } else if (transactionSync.syncedCount > 0 || accountSync.updatedAccounts > 0) {
+          const transactionPart =
+            transactionSync.syncedCount > 0
+              ? `${transactionSync.syncedCount} SMS transaction${transactionSync.syncedCount > 1 ? 's' : ''}`
+              : '';
+          const accountPart =
+            accountSync.updatedAccounts > 0
+              ? `${accountSync.updatedAccounts} bank account${accountSync.updatedAccounts > 1 ? 's' : ''}`
+              : '';
+          const combined = [transactionPart, accountPart].filter(Boolean).join(' and ');
+
+          setSmsSyncHint(`SMS Intelligence Agent synced ${combined}.`);
           bumpDataRefreshToken();
         } else {
-          setSmsSyncHint('Watching for new bank SMS from now.');
+          setSmsSyncHint('SMS Intelligence Agent is watching for new bank SMS from now.');
         }
       } catch (error) {
         if (isSmsSyncUnavailableError(error)) {
@@ -474,7 +502,7 @@ export function AstraAppShell({ session }: AstraAppShellProps) {
         clearTimeout(timer);
       }
     };
-  }, [activeTab, session.user.id]);
+  }, [session.user.id]);
 
   return (
     <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
@@ -602,10 +630,10 @@ export function AstraAppShell({ session }: AstraAppShellProps) {
         </View>
 
         <View style={styles.content}>
-          <AnimatedPagerView
+          <PagerView
             initialPage={tabs.indexOf(initialTab)}
             offscreenPageLimit={1}
-            onPageScroll={pagerPageScrollHandler}
+            onPageScroll={handlePageScroll}
             onPageSelected={handlePageSelected}
             ref={pagerRef}
             style={styles.pager}
@@ -654,7 +682,18 @@ export function AstraAppShell({ session }: AstraAppShellProps) {
                 <RecurringScreen onRecurringPaymentStateChange={handleRecurringPaymentStateChange} />
               ) : null}
             </View>
-          </AnimatedPagerView>
+
+            <View collapsable={false} style={styles.screenPage}>
+              {mountedTabs.Agents ? (
+                <AgentsScreen
+                  onNavigateToTab={handleAgentNavigate}
+                  refreshToken={dataRefreshToken}
+                  transactionGroups={transactionGroups}
+                  userId={session.user.id}
+                />
+              ) : null}
+            </View>
+          </PagerView>
         </View>
       </View>
     </SafeAreaView>

@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Astra | Money OS for ambitious lives</title>
+    <meta
+      name="description"
+      content="Astra is a modern personal finance command center for accounts, transactions, categories, recurring spend, investments, and AI-native insights."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./premium.css" />
+  </head>
+  <body>
+    <div class="bg-grid"></div>
+    <div class="bg-noise"></div>
+    <div class="bg-orb one"></div>
+    <div class="bg-orb two"></div>
+
+    <header class="site-header">
+      <div class="header-wrap">
+        <a class="brand" href="./index.html">
+          <span class="brand-mark"></span>
+          Astra
+        </a>
+        <button class="menu-toggle" type="button">Menu</button>
+        <nav class="nav">
+          <a data-page="index.html" href="./index.html">Home</a>
+          <a data-page="features.html" href="./features.html">Features</a>
+          <a data-page="ai.html" href="./ai.html">AI Layer</a>
+          <a data-page="security.html" href="./security.html">Security</a>
+          <a class="header-cta btn primary" data-page="download" href="#download">Get Astra</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="hero">
+        <div class="hero-copy" data-reveal>
+          <div class="eyebrow">Astra Financial System</div>
+          <h1>One place to track money, assets, spending behavior, and what to do next.</h1>
+          <p>
+            Astra brings your accounts, recurring bills, transactions, budgets, and investment surfaces into one
+            cohesive product experience. It starts as a sharp control panel and evolves into a practical AI financial
+            operating system.
+          </p>
+          <div class="hero-badge"><span>Live</span> Android MVP with real transaction sync workflows</div>
+          <div class="hero-actions">
+            <a class="btn primary" href="#download">Request Early Access</a>
+            <a class="btn secondary" href="./features.html">Explore Product Surfaces</a>
+            <a class="btn ghost" href="./ai.html">See the AI roadmap</a>
+          </div>
+          <div class="metrics">
+            <div class="metric-chip">
+              <div class="metric-label">Core Screens</div>
+              <div class="metric-value">6 connected views</div>
+            </div>
+            <div class="metric-chip">
+              <div class="metric-label">Current Build</div>
+              <div class="metric-value">MVP in active testing</div>
+            </div>
+            <div class="metric-chip">
+              <div class="metric-label">Architecture</div>
+              <div class="metric-value">Supabase + Agent-ready</div>
+            </div>
+          </div>
+        </div>
+
+        <aside class="visual-stage tilt" data-reveal>
+          <div class="stage-grid"></div>
+          <div class="signal-pill">Connected system</div>
+          <div class="mock-phone">
+            <div class="mock-notch"></div>
+            <img src="./assets/dashboard-preview.png" alt="Astra dashboard preview" />
+          </div>
+          <article class="floating-shot a">
+            <img src="./assets/categories-preview.png" alt="Astra categories preview" />
+          </article>
+          <article class="floating-shot b">
+            <img src="./assets/transactions-preview.png" alt="Astra transactions preview" />
+          </article>
+          <article class="floating-shot c">
+            <img src="./assets/recurring-preview.png" alt="Astra recurring preview" />
+          </article>
+        </aside>
+      </section>
+
+      <section class="connected-section">
+        <div class="section-head" data-reveal>
+          <div>
+            <div class="kicker">Live product visuals</div>
+            <h2>Designed as one connected money experience</h2>
+          </div>
+          <p>
+            Every screen shares the same data spine and visual rhythm, so the product feels cohesive instead of
+            disconnected tools.
+          </p>
+        </div>
+        <div class="showcase-grid">
+          <article class="shot-card tilt" data-reveal>
+            <img src="./assets/dashboard-preview.png" alt="Dashboard screen" />
+            <div class="shot-meta">
+              <strong>Dashboard</strong>
+              <small>Budget left, review queue, upcoming obligations</small>
+            </div>
+          </article>
+          <article class="shot-card tilt" data-reveal>
+            <img src="./assets/categories-preview.png" alt="Categories screen" />
+            <div class="shot-meta">
+              <strong>Categories</strong>
+              <small>Progress bars, ring utilization, rebalance controls</small>
+            </div>
+          </article>
+          <article class="shot-card tilt" data-reveal>
+            <img src="./assets/transactions-preview.png" alt="Transactions screen" />
+            <div class="shot-meta">
+              <strong>Transactions</strong>
+              <small>Search, manual adds, SMS feed, bank-aware rows</small>
+            </div>
+          </article>
+          <article class="shot-card tilt" data-reveal>
+            <img src="./assets/recurring-preview.png" alt="Recurring screen" />
+            <div class="shot-meta">
+              <strong>Recurring</strong>
+              <small>Paid states and instant category impact</small>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="connected-section narrative-strip">
+        <div class="section-head" data-reveal>
+          <div>
+            <div class="kicker">Connected by design</div>
+            <h2>A single money narrative across every surface.</h2>
+          </div>
+          <p>
+            Capture, classify, control, and improve. Each view continues the same story so users never feel lost in
+            separate tools.
+          </p>
+        </div>
+        <div class="journey-track" data-reveal>
+          <article class="journey-step">
+            <span>01</span>
+            <h4>Capture events</h4>
+            <p>Transactions and recurring obligations flow in through forms and ingestion layers.</p>
+          </article>
+          <article class="journey-step">
+            <span>02</span>
+            <h4>Classify instantly</h4>
+            <p>Smart mapping routes spend to the right category and updates budget pressure.</p>
+          </article>
+          <article class="journey-step">
+            <span>03</span>
+            <h4>Visualize impact</h4>
+            <p>Dashboard, charts, and rails expose where money is strong and where it is leaking.</p>
+          </article>
+          <article class="journey-step">
+            <span>04</span>
+            <h4>Act with confidence</h4>
+            <p>Rebalance budgets, edit recurring items, and move toward proactive AI guidance.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="connected-section">
+        <div class="section-head" data-reveal>
+          <div>
+            <div class="kicker">What Astra does today</div>
+            <h2>A focused execution layer for personal finance.</h2>
+          </div>
+          <p>
+            We are building a product people can trust every day: clear accounting of money in, money out, and money
+            left, with design that feels premium and readable under pressure.
+          </p>
+        </div>
+        <div class="grid three">
+          <article class="card" data-reveal>
+            <h3>Accounts + Assets</h3>
+            <p>
+              Add banks manually in seconds, keep opening balances accurate, and watch the top graph adjust with each
+              debit and credit event.
+            </p>
+          </article>
+          <article class="card" data-reveal>
+            <h3>Transactions + Search</h3>
+            <p>
+              Fast search, manual entry forms, bank-aware transaction labels, and an SMS sync mode that starts from now
+              for clean onboarding.
+            </p>
+          </article>
+          <article class="card" data-reveal>
+            <h3>Categories + Budget Control</h3>
+            <p>
+              Hierarchical categories, responsive progress bars, ring visualization, add category flow, and rebalance
+              controls designed for quick decisions.
+            </p>
+          </article>
+          <article class="card" data-reveal>
+            <h3>Recurring Intelligence</h3>
+            <p>
+              Mark subscriptions as paid, auto-map to categories, and keep monthly spend and transaction history synced
+              across the app.
+            </p>
+          </article>
+          <article class="card" data-reveal>
+            <h3>Dashboard Summary</h3>
+            <p>
+              Single glance visibility on money left, review queues, category utilization, and upcoming obligations.
+            </p>
+          </article>
+          <article class="card" data-reveal>
+            <h3>Investment Surfaces</h3>
+            <p>
+              Portfolio trend view, top movers, and account-level returns aligned to the same visual language as the
+              rest of Astra.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section class="connected-section">
+        <div class="section-head" data-reveal>
+          <div>
+            <div class="kicker">Money control rail</div>
+            <h2>Real-time flow of value through Astra</h2>
+          </div>
+          <p>
+            The platform continuously translates raw spend events into understandable control signals for users.
+          </p>
+        </div>
+        <div class="value-rail" data-reveal>
+          <div class="value-row">
+            <strong>Data capture reliability</strong>
+            <div class="value-track"><span style="width: 78%"></span></div>
+            <em>Android SMS + manual modes live</em>
+          </div>
+          <div class="value-row">
+            <strong>Cross-screen sync speed</strong>
+            <div class="value-track"><span style="width: 91%"></span></div>
+            <em>Optimistic recurring and category updates</em>
+          </div>
+          <div class="value-row">
+            <strong>Budget visibility</strong>
+            <div class="value-track"><span style="width: 88%"></span></div>
+            <em>Live ring, bars, and trend signals</em>
+          </div>
+          <div class="value-row">
+            <strong>AI readiness</strong>
+            <div class="value-track"><span style="width: 62%"></span></div>
+            <em>Connector bridge + agent architecture in progress</em>
+          </div>
+        </div>
+      </section>
+
+      <section class="connected-section">
+        <div class="section-head" data-reveal>
+          <div>
+            <div class="kicker">Data and logic flow</div>
+            <h2>Designed to scale from MVP to production connectors.</h2>
+          </div>
+          <p>
+            The current stack already separates UI, ingestion, categorization logic, and backend sync so regulated data
+            providers can be added without rewriting the experience.
+          </p>
+        </div>
+        <div class="flow">
+          <div class="flow-step" data-reveal>
+            <div class="index">01</div>
+            <h4>Capture</h4>
+            <p>Manual bank standing, recurring events, transaction forms, and Android SMS events enter Astra.</p>
+          </div>
+          <div class="flow-step" data-reveal>
+            <div class="index">02</div>
+            <h4>Normalize</h4>
+            <p>Data is cleaned, mapped to categories, and saved in Supabase with source metadata for traceability.</p>
+          </div>
+          <div class="flow-step" data-reveal>
+            <div class="index">03</div>
+            <h4>Compute</h4>
+            <p>Derived balances, category spend maps, and trend points are generated for each active screen.</p>
+          </div>
+          <div class="flow-step" data-reveal>
+            <div class="index">04</div>
+            <h4>Assist</h4>
+            <p>AI agents will transform raw money movement into proactive guidance and decision-grade insights.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="connected-section">
+        <div class="section-head" data-reveal>
+          <div>
+            <div class="kicker">Road to intelligence</div>
+            <h2>Execution timeline with product priorities.</h2>
+          </div>
+          <p>
+            We are intentionally sequencing build quality, data reliability, and intelligence in that order to ensure
+            trust before automation.
+          </p>
+        </div>
+        <div class="timeline">
+          <article class="timeline-card" data-reveal>
+            <h4>P0: Product Spine</h4>
+            <div class="meta">Foundation</div>
+            <p>
+              Core screens, smooth navigation, recurring-to-category sync, manual onboarding, and cross-screen budget
+              consistency.
+            </p>
+          </article>
+          <article class="timeline-card" data-reveal>
+            <h4>P1: Connector Bridge</h4>
+            <div class="meta">Data transport</div>
+            <p>
+              Production-ready adapter interfaces, sync states, retries, fallbacks, and observability for partner
+              integrations.
+            </p>
+          </article>
+          <article class="timeline-card" data-reveal>
+            <h4>P2: AI Agent Layer</h4>
+            <div class="meta">Intelligence</div>
+            <p>
+              Categorization confidence, anomaly detection, forecasting, recommendations, and personalized financial
+              copiloting.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section class="connected-section" id="download">
+        <div class="cta-panel" data-reveal>
+          <div>
+            <h3>Build your financial command center with Astra.</h3>
+            <p>
+              Looking for a design-led finance app with a serious data and AI roadmap? Astra is being built exactly for
+              that.
+            </p>
+          </div>
+          <div class="hero-actions">
+            <a class="btn primary" href="mailto:hello@astra.money">Contact Team Astra</a>
+            <a class="btn secondary" href="./features.html">View Full Feature Breakdown</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="footer-wrap">
+        <div>Astra Finance OS</div>
+        <div>
+          <a href="./features.html">Features</a> |
+          <a href="./ai.html">AI Layer</a> |
+          <a href="./security.html">Security</a>
+        </div>
+      </div>
+    </footer>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

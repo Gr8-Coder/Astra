@@ -10,8 +10,8 @@ export type RecurringItem = {
 };
 
 export const recurringSummary = {
-  leftToPay: 290,
-  paidSoFar: 11249
+  leftToPay: 11539,
+  paidSoFar: 0
 };
 
 export const recurringItems: RecurringItem[] = [
@@ -22,7 +22,6 @@ export const recurringItems: RecurringItem[] = [
     id: 'spotify-1st',
     icon: 'spotify',
     label: 'Spotify',
-    paid: true,
     type: 'brand'
   },
   {
@@ -32,7 +31,6 @@ export const recurringItems: RecurringItem[] = [
     id: 'google-2nd',
     icon: 'google',
     label: 'Google',
-    paid: true,
     type: 'brand'
   },
   {
@@ -42,7 +40,6 @@ export const recurringItems: RecurringItem[] = [
     id: 'rent-3rd',
     icon: '🏠',
     label: 'Rent',
-    paid: true,
     type: 'emoji'
   },
   {
@@ -52,7 +49,6 @@ export const recurringItems: RecurringItem[] = [
     id: 'tiffin-4th',
     icon: '🍚',
     label: 'Tiffin',
-    paid: true,
     type: 'emoji'
   },
   {
@@ -62,7 +58,6 @@ export const recurringItems: RecurringItem[] = [
     id: 'coconut-5th',
     icon: '🥥',
     label: 'Coconut',
-    paid: true,
     type: 'emoji'
   },
   {
@@ -81,7 +76,6 @@ export const recurringItems: RecurringItem[] = [
     id: 'hotstar-7th',
     icon: 'hotstar',
     label: 'hotstar',
-    paid: true,
     type: 'brand'
   },
   {
@@ -100,7 +94,6 @@ export const recurringItems: RecurringItem[] = [
     id: 'prime-9th',
     icon: '🎬',
     label: 'Prime',
-    paid: true,
     type: 'emoji'
   },
   {

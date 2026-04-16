@@ -47,6 +47,12 @@ export default function App() {
         if (isMounted) {
           setSession(currentSession);
         }
+      } catch (error) {
+        console.warn('[auth] bootstrap failed', error);
+
+        if (isMounted) {
+          setSession(null);
+        }
       } finally {
         if (isMounted) {
           setAuthReady(true);
@@ -66,7 +72,9 @@ export default function App() {
     });
 
     const urlSubscription = Linking.addEventListener('url', ({ url }) => {
-      void maybeHandleIncomingAuthSession(url);
+      void maybeHandleIncomingAuthSession(url).catch((error) => {
+        console.warn('[auth] url session handling failed', error);
+      });
     });
 
     return () => {

@@ -5,13 +5,11 @@ import {
   Alert,
   LayoutAnimation,
   Modal,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
-  UIManager,
   useWindowDimensions,
   View
 } from 'react-native';
@@ -81,12 +79,6 @@ export function TransactionsScreen({
   const [selectedCategory, setSelectedCategory] = useState<TransactionCategoryOption | null>(null);
   const [isCategoryMenuVisible, setIsCategoryMenuVisible] = useState(false);
   const previousTransactionsSignature = useRef('');
-
-  useEffect(() => {
-    if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-      UIManager.setLayoutAnimationEnabledExperimental(true);
-    }
-  }, []);
 
   const normalizedQuery = searchQuery.trim().toLowerCase();
   const filteredGroups = useMemo(

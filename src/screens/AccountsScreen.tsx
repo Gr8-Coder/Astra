@@ -179,7 +179,7 @@ export function AccountsScreen({ refreshToken, userId }: AccountsScreenProps) {
     return () => {
       active = false;
     };
-  }, [userId]);
+  }, [refreshToken, userId]);
 
   useEffect(() => {
     let active = true;

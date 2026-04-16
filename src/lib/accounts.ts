@@ -3,7 +3,8 @@ import { type RangeKey, type TrendPoint } from '../data/investments';
 import {
   deriveBankAccountSignalsFromSmsTransactions,
   scanBankSmsTransactions,
-  type SmsBankAccountSignal
+  type SmsBankAccountSignal,
+  type SmsTransactionDraft
 } from './androidSms';
 import {
   getLinkedBankConnectionState,
@@ -63,6 +64,13 @@ type AddManualBankInput = {
 type SyncSmsDetectedBanksInput = {
   daysBack?: number;
   limit?: number;
+  userId: string;
+};
+
+type SyncSmsDetectedBanksFromTransactionsInput = {
+  matchedMessages?: number;
+  scannedMessages?: number;
+  transactions: SmsTransactionDraft[];
   userId: string;
 };
 
@@ -621,24 +629,13 @@ function selectExistingAccountForSignal(signal: SmsBankAccountSignal, accounts: 
   );
 }
 
-export async function syncSmsDetectedBankAccounts({
-  daysBack = 150,
-  limit = 600,
+async function upsertSmsSignalsAsBankAccounts({
+  signals,
   userId
-}: SyncSmsDetectedBanksInput): Promise<SyncSmsDetectedBanksResult> {
-  const smsScan = await scanBankSmsTransactions({ daysBack, limit });
-  const signals = deriveBankAccountSignalsFromSmsTransactions(smsScan.transactions);
-
-  if (!signals.length) {
-    return {
-      bankNames: [],
-      detectedBanks: 0,
-      matchedMessages: smsScan.matchedCount,
-      scannedMessages: smsScan.scannedCount,
-      updatedAccounts: 0
-    };
-  }
-
+}: {
+  signals: SmsBankAccountSignal[];
+  userId: string;
+}) {
   const existingQuery = await supabase
     .from('accounts')
     .select('id, name, current_balance, metadata, created_at, last_synced_at, mask, provider, provider_account_id')
@@ -837,10 +834,78 @@ export async function syncSmsDetectedBankAccounts({
 
   return {
     bankNames,
-    detectedBanks: bankNames.length,
+    updatedAccounts
+  };
+}
+
+export async function syncSmsDetectedBankAccounts({
+  daysBack = 150,
+  limit = 600,
+  userId
+}: SyncSmsDetectedBanksInput): Promise<SyncSmsDetectedBanksResult> {
+  const smsScan = await scanBankSmsTransactions({ daysBack, limit });
+  const signals = deriveBankAccountSignalsFromSmsTransactions(smsScan.transactions);
+
+  if (!signals.length) {
+    return {
+      bankNames: [],
+      detectedBanks: 0,
+      matchedMessages: smsScan.matchedCount,
+      scannedMessages: smsScan.scannedCount,
+      updatedAccounts: 0
+    };
+  }
+  const upserted = await upsertSmsSignalsAsBankAccounts({
+    signals,
+    userId
+  });
+
+  return {
+    bankNames: upserted.bankNames,
+    detectedBanks: upserted.bankNames.length,
     matchedMessages: smsScan.matchedCount,
     scannedMessages: smsScan.scannedCount,
-    updatedAccounts
+    updatedAccounts: upserted.updatedAccounts
+  };
+}
+
+export async function syncSmsDetectedBankAccountsFromTransactions({
+  matchedMessages,
+  scannedMessages,
+  transactions,
+  userId
+}: SyncSmsDetectedBanksFromTransactionsInput): Promise<SyncSmsDetectedBanksResult> {
+  const signals = deriveBankAccountSignalsFromSmsTransactions(transactions);
+  const safeScannedMessages =
+    typeof scannedMessages === 'number' && Number.isFinite(scannedMessages)
+      ? Math.max(0, scannedMessages)
+      : transactions.length;
+  const safeMatchedMessages =
+    typeof matchedMessages === 'number' && Number.isFinite(matchedMessages)
+      ? Math.max(0, matchedMessages)
+      : transactions.length;
+
+  if (!signals.length) {
+    return {
+      bankNames: [],
+      detectedBanks: 0,
+      matchedMessages: safeMatchedMessages,
+      scannedMessages: safeScannedMessages,
+      updatedAccounts: 0
+    };
+  }
+
+  const upserted = await upsertSmsSignalsAsBankAccounts({
+    signals,
+    userId
+  });
+
+  return {
+    bankNames: upserted.bankNames,
+    detectedBanks: upserted.bankNames.length,
+    matchedMessages: safeMatchedMessages,
+    scannedMessages: safeScannedMessages,
+    updatedAccounts: upserted.updatedAccounts
   };
 }
 

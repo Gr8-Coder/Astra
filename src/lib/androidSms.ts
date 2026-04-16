@@ -44,9 +44,13 @@ type AstraSmsNativeModule = {
 
 const senderBankHints = [
   'SBI',
+  'SBIYONO',
   'SBIINB',
+  'SBIUPI',
   'HDFC',
+  'HDFCBK',
   'ICICI',
+  'ICICIB',
   'CANARA',
   'CANBNK',
   'CNRB',
@@ -61,6 +65,8 @@ const senderBankHints = [
   'IDFC',
   'YESBNK',
   'INDUSB',
+  'SCBANK',
+  'SCISMS',
   'PAYTM'
 ];
 
@@ -126,34 +132,46 @@ function parseAmount(body: string, direction: SmsDirection) {
 
 function parseBalance(body: string) {
   const balanceMatch = body.match(
-    /(?:avl(?:\.| )?bal(?:ance)?|available balance|bal(?:ance)?)\D{0,10}(?:inr|rs\.?|₹)?\s*([0-9,]+(?:\.[0-9]{1,2})?)/i
+    /(?:avl(?:\.| )?bal(?:ance)?|available balance|total bal(?:ance)?|bal(?:ance)?)\D{0,18}(?:inr|rs\.?|₹)?\s*([0-9,]+(?:\.[0-9]{1,2})?)/i
   )?.[1];
 
   return balanceMatch ? toNumber(balanceMatch) : undefined;
 }
 
 function parseAccountMask(body: string) {
-  const accountMatch = body.match(
-    /(?:a\/c|acct|account)\s*(?:no\.?|ending|x|xx|xxxx|\*)?\s*([xX*0-9-]{2,})/i
-  )?.[1];
+  const patterns = [
+    /(?:a\/c|acct|account)\s*(?:no\.?|number|ending|end|x+|xx+|xxxx|\*)?\s*([xX*0-9-]{2,})/i,
+    /(?:ending|ends|last)\s*(?:with)?\s*([0-9]{2,})/i,
+    /(?:xx+|\*+)\s*([0-9]{2,})/i
+  ];
 
-  if (!accountMatch) {
-    return undefined;
+  for (const pattern of patterns) {
+    const accountMatch = body.match(pattern)?.[1];
+
+    if (!accountMatch) {
+      continue;
+    }
+
+    const cleaned = accountMatch.replace(/[^xX*0-9]/g, '');
+
+    if (!cleaned) {
+      continue;
+    }
+
+    const digits = cleaned.replace(/\D/g, '');
+
+    if (digits.length >= 4) {
+      return digits.slice(-4);
+    }
+
+    if (digits.length >= 2) {
+      return digits;
+    }
+
+    return cleaned.slice(-4);
   }
 
-  const cleaned = accountMatch.replace(/[^xX*0-9]/g, '');
-
-  if (!cleaned) {
-    return undefined;
-  }
-
-  const digits = cleaned.replace(/\D/g, '');
-
-  if (digits.length >= 4) {
-    return digits.slice(-4);
-  }
-
-  return cleaned.slice(-4);
+  return undefined;
 }
 
 export function resolveBankNameFromSender(sender: string) {
@@ -266,12 +284,22 @@ function parseMerchant(body: string, sender: string, direction: SmsDirection, ba
     }
   }
 
+  const vpaMatch = body.match(/(?:vpa|upi id)\s*[:\-]?\s*([a-z0-9._-]{2,}@[a-z]{2,})/i)?.[1];
+
+  if (vpaMatch) {
+    const merchant = cleanupMerchant(vpaMatch);
+
+    if (merchant.length >= 2) {
+      return merchant;
+    }
+  }
+
   return bankName ?? 'Bank transaction';
 }
 
 function resolveDirection(body: string): SmsDirection | null {
-  const hasDebit = /(debited|spent|sent|paid|withdrawn|purchase|dr(?:\.|\b)|upi payment)/i.test(body);
-  const hasCredit = /(credited|received|salary|refund|deposited|cr(?:\.|\b)|reversal)/i.test(body);
+  const hasDebit = /(debited|debit|spent|sent|paid|withdrawn|withdrawal|purchase|dr(?:\.|\b)|upi payment)/i.test(body);
+  const hasCredit = /(credited|credit|received|salary|refund|deposited|cr(?:\.|\b)|reversal)/i.test(body);
 
   if (hasDebit && !hasCredit) {
     return 'debit';

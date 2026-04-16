@@ -69,7 +69,7 @@ const recurringIconGroups: RecurringIconGroup[] = [
     title: 'Home & Transport',
     options: [
       { icon: '🏠', label: 'Rent', type: 'emoji' },
-      { icon: 'house', label: 'Home', type: 'icon' },
+      { icon: 'home', label: 'Home', type: 'icon' },
       { icon: 'car-outline', label: 'Car', type: 'icon' },
       { icon: 'train-car', label: 'Metro', type: 'icon' },
       { icon: '🚕', label: 'Taxi', type: 'emoji' },
@@ -125,6 +125,14 @@ const brandColorMap: Record<string, string> = {
   youtube: '#FF0000'
 };
 
+const materialIconAliasMap: Record<string, string> = {
+  house: 'home'
+};
+
+function resolveMaterialIconName(icon: string) {
+  return materialIconAliasMap[icon] ?? icon;
+}
+
 function iconChoiceFromItem(item: RecurringItem): RecurringIconChoice {
   const matched = recurringIconChoices.find((choice) => choice.type === item.type && choice.icon === item.icon);
 
@@ -176,7 +184,7 @@ function renderIconChoicePreview(choice: RecurringIconChoice) {
     }
   }
 
-  return <MaterialCommunityIcons color={colors.textPrimary} name={choice.icon as any} size={20} />;
+  return <MaterialCommunityIcons color={colors.textPrimary} name={resolveMaterialIconName(choice.icon) as any} size={20} />;
 }
 
 function renderCardIcon(item: RecurringItem) {
@@ -220,7 +228,7 @@ function renderCardIcon(item: RecurringItem) {
     }
   }
 
-  return <MaterialCommunityIcons color={colors.textPrimary} name={item.icon as any} size={25} />;
+  return <MaterialCommunityIcons color={colors.textPrimary} name={resolveMaterialIconName(item.icon) as any} size={25} />;
 }
 
 function IconPickerSections({

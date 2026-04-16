@@ -1,26 +1,26 @@
-function requireEnv(name: string) {
-  const value = process.env[name]?.trim();
+const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL?.trim();
+const SUPABASE_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim();
+const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY?.trim();
 
-  if (!value) {
+function requireStaticEnv(name: string, value?: string) {
+  const normalized = value?.trim();
+
+  if (!normalized) {
     throw new Error(
       `[env] Missing ${name}. Add it to the local .env file before starting Astra.`
     );
   }
 
-  return value;
+  return normalized;
 }
 
 function getSupabasePublicKey() {
-  const publishableKey = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim();
-
-  if (publishableKey) {
-    return publishableKey;
+  if (SUPABASE_PUBLISHABLE_KEY) {
+    return SUPABASE_PUBLISHABLE_KEY;
   }
 
-  const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY?.trim();
-
-  if (anonKey) {
-    return anonKey;
+  if (SUPABASE_ANON_KEY) {
+    return SUPABASE_ANON_KEY;
   }
 
   throw new Error(
@@ -29,6 +29,6 @@ function getSupabasePublicKey() {
 }
 
 export const env = {
-  supabaseUrl: requireEnv('EXPO_PUBLIC_SUPABASE_URL'),
+  supabaseUrl: requireStaticEnv('EXPO_PUBLIC_SUPABASE_URL', SUPABASE_URL),
   supabasePublishableKey: getSupabasePublicKey()
 };
