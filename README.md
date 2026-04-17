@@ -47,3 +47,19 @@ Then open `http://localhost:4173`.
 ## Backend
 
 Supabase setup and migrations live in [`supabase/`](./supabase).
+
+## OpenAI SMS Intelligence
+
+Astra can enrich Android bank SMS with the OpenAI Responses API through the Supabase Edge Function in [`supabase/functions/sms-understanding/`](./supabase/functions/sms-understanding).
+
+Required Supabase secret:
+
+```bash
+npx supabase secrets set OPENAI_API_KEY=your_openai_api_key --project-ref dbcsfoezxznyprkrduld
+```
+
+Optional model override:
+
+```bash
+npx supabase secrets set OPENAI_SMS_MODEL=gpt-4o-mini --project-ref dbcsfoezxznyprkrduld
+```

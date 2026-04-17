@@ -49,9 +49,13 @@ This folder contains the first Astra backend schema for the MVP.
    - `npx supabase db push`
 5. Deploy the bank-link function:
    - `npx supabase functions deploy bank-link --project-ref dbcsfoezxznyprkrduld`
-6. Set function secrets (minimum for MVP OTP flow):
+6. Deploy the OpenAI SMS understanding function:
+   - `npx supabase functions deploy sms-understanding --project-ref dbcsfoezxznyprkrduld`
+7. Set function secrets (minimum for MVP OTP flow):
    - `npx supabase secrets set BANK_LINK_PROVIDER=mock BANK_LINK_MOCK_OTP=123456 --project-ref dbcsfoezxznyprkrduld`
-7. For real providers, set these too:
+8. Set the OpenAI SMS secret for the intelligence layer:
+   - `npx supabase secrets set OPENAI_API_KEY=your_openai_api_key OPENAI_SMS_MODEL=gpt-4o-mini --project-ref dbcsfoezxznyprkrduld`
+9. For real providers, set these too:
    - `npx supabase secrets set BANK_LINK_API_BASE_URL=... BANK_LINK_CLIENT_ID=... BANK_LINK_CLIENT_SECRET=... BANK_LINK_SYNC_ENDPOINT=... BANK_LINK_TRANSACTIONS_ENDPOINT=... --project-ref dbcsfoezxznyprkrduld`
-8. Generate database types for the app:
+10. Generate database types for the app:
    - `npx supabase gen types typescript --project-id dbcsfoezxznyprkrduld --schema public`

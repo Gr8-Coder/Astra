@@ -12,6 +12,14 @@ type SmsDirection = 'credit' | 'debit';
 export type SmsTransactionDraft = {
   accountMask?: string;
   amount: number;
+  aiCategoryLabel?: string;
+  aiConfidence?: number;
+  aiEngine?: string;
+  aiIsRecurring?: boolean;
+  aiModelVersion?: string;
+  aiPromptVersion?: string;
+  aiReason?: string;
+  aiUsedFallback?: boolean;
   balanceAfter?: number;
   bankName?: string;
   bookedAt: Date;

@@ -11,6 +11,7 @@ import {
   learnFromUserCategoryFeedback,
   predictCategoryWithAstraAgent
 } from './agentLearning';
+import { enrichSmsTransactionsWithOpenAI } from './smsUnderstanding';
 import { ingestTransactions } from './ledgerIngestion';
 import { supabase } from './supabase';
 
@@ -42,9 +43,17 @@ type ExternalTransactionDirection = 'credit' | 'debit' | 'transfer';
 type ExternalTransactionInput = {
   accountMask?: string;
   amount: number;
+  agentConfidence?: number;
+  agentEngine?: string;
+  agentIsRecurring?: boolean;
+  agentModelVersion?: string;
+  agentPromptVersion?: string;
+  agentReason?: string;
+  agentUsedFallback?: boolean;
   balanceAfter?: number;
   bankName?: string;
   bookedAt: Date;
+  categoryHint?: string;
   direction: ExternalTransactionDirection;
   merchant: string;
   provider: string;
@@ -567,9 +576,19 @@ export async function syncSmsTransactionsFromNow(userId: string): Promise<SmsSyn
     limit: 700,
     sinceEpochMs
   });
+  let enrichedTransactions = scan.transactions;
 
-  const groups = scan.transactions.length
-    ? await upsertSmsTransactionsAndReloadGroups(userId, scan.transactions)
+  if (scan.transactions.length) {
+    try {
+      const enrichment = await enrichSmsTransactionsWithOpenAI(scan.transactions);
+      enrichedTransactions = enrichment.transactions;
+    } catch (error) {
+      console.warn('[sms-understanding] enrichment skipped during sync', error);
+    }
+  }
+
+  const groups = enrichedTransactions.length
+    ? await upsertSmsTransactionsAndReloadGroups(userId, enrichedTransactions)
     : await fetchStoredTransactionGroups(userId);
 
   await writeStoredEpochMs(smsLastScanKey(userId), now);
@@ -578,8 +597,8 @@ export async function syncSmsTransactionsFromNow(userId: string): Promise<SmsSyn
     groups,
     matchedCount: scan.matchedCount,
     scannedCount: scan.scannedCount,
-    syncedCount: scan.transactions.length,
-    transactions: scan.transactions,
+    syncedCount: enrichedTransactions.length,
+    transactions: enrichedTransactions,
     trackingStarted: false
   };
 }
@@ -646,14 +665,32 @@ export async function upsertExternalTransactionsAndReloadGroups(
         return null;
       }
 
-      const fallbackCategoryLabel = item.direction === 'credit' ? 'Income' : inferCategoryLabel(item.merchant);
-      const prediction = await predictCategoryWithAstraAgent({
-        direction: item.direction,
-        fallbackCategoryLabel,
-        merchant: item.merchant,
-        rawBody: item.rawBody,
-        userId
-      });
+      const fallbackCategoryLabel =
+        item.direction === 'credit' ? 'Income' : inferCategoryLabel(item.merchant, item.categoryHint);
+      const hintedCategoryLabel = item.categoryHint?.trim();
+      const prediction = hintedCategoryLabel
+        ? {
+            categoryLabel: item.direction === 'credit' ? 'Income' : hintedCategoryLabel,
+            confidence:
+              typeof item.agentConfidence === 'number' && Number.isFinite(item.agentConfidence)
+                ? item.agentConfidence
+                : 0.86,
+            modelVersion: item.agentModelVersion ?? 'astra-sms-understanding-v1',
+            promptVersion: item.agentPromptVersion ?? 'sms-understanding-v1',
+            reason:
+              item.agentReason ??
+              (item.agentUsedFallback
+                ? 'Classified with Astra fallback SMS rules.'
+                : 'Classified with Astra OpenAI SMS understanding agent.'),
+            usedFallback: Boolean(item.agentUsedFallback)
+          }
+        : await predictCategoryWithAstraAgent({
+            direction: item.direction,
+            fallbackCategoryLabel,
+            merchant: item.merchant,
+            rawBody: item.rawBody,
+            userId
+          });
       const visuals = visualsForDirectionAndCategory(item.direction, prediction.categoryLabel);
 
       return {
@@ -670,6 +707,8 @@ export async function upsertExternalTransactionsAndReloadGroups(
           category_icon: visuals.icon,
           category_label: visuals.label,
           agent_confidence: prediction.confidence,
+          agent_engine: item.agentEngine ?? (hintedCategoryLabel ? 'openai-responses' : 'astra-local-intelligence-v1'),
+          agent_is_recurring: item.agentIsRecurring ?? null,
           agent_model_version: prediction.modelVersion,
           agent_prompt_version: prediction.promptVersion,
           agent_reason: prediction.reason,
@@ -720,9 +759,17 @@ export async function upsertSmsTransactionsAndReloadGroups(
   const normalizedItems: ExternalTransactionInput[] = items.map((item) => ({
     accountMask: item.accountMask,
     amount: item.amount,
+    agentConfidence: item.aiConfidence,
+    agentEngine: item.aiEngine,
+    agentIsRecurring: item.aiIsRecurring,
+    agentModelVersion: item.aiModelVersion,
+    agentPromptVersion: item.aiPromptVersion,
+    agentReason: item.aiReason,
+    agentUsedFallback: item.aiUsedFallback,
     balanceAfter: item.balanceAfter,
     bankName: item.bankName,
     bookedAt: item.bookedAt,
+    categoryHint: item.aiCategoryLabel,
     direction: item.direction,
     merchant: item.merchant,
     provider: 'bank-sms',
